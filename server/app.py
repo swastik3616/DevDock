@@ -4,6 +4,8 @@ from flask_pymongo import PyMongo
 from routes.auth import auth_bp
 from routes.notes import notes_bp
 from routes.files import files_bp
+from routes.ai import ai_bp
+from routes.music import music_bp
 import os
 
 app = Flask(__name__)
@@ -19,6 +21,8 @@ CORS(app)
 app.register_blueprint(auth_bp, url_prefix='/auth')
 app.register_blueprint(notes_bp, url_prefix='/notes')
 app.register_blueprint(files_bp, url_prefix='/files')
+app.register_blueprint(ai_bp, url_prefix='/api/ai')
+app.register_blueprint(music_bp, url_prefix='/api/music')
 
 # Seed Guest User
 from werkzeug.security import generate_password_hash

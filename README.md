@@ -28,9 +28,15 @@ The core `Window.tsx` component handles strict bounds-checking and virtualizatio
 
 ### 2.2 Application Ecosystem
 *   **Finder (File System)**: Executes full CRUD operations (Create, Read, Update/Rename, Delete) mapped to the `/api/files` REST endpoints. Implements inline-editing state machines for file renaming.
-*   **Safari (Web Browser)**: Utilizes an isolated `<iframe>` environment with dynamic URI parsing to route search queries to external engines seamlessly.
-*   **Siri (Voice Recognition Integration)**: Implements the browser's native `SpeechRecognition` API. The engine runs on a `continuous = true` loop to prevent timeout exceptions (`no-speech` errors). Voice patterns are evaluated through regex/string-matching to dispatch system-level commands (e.g., triggering `openApp('safari')`).
-*   **System Options (Apple Menu)**: A global, state-driven dropdown mapped to the MenuBar's Apple (``) icon. It controls the `isAsleep` store state to mount a unified `<AnimatePresence>` screen-dimming overlay, and executes `localStorage` cache invalidation to safely terminate authenticated sessions.
+*   **Terminal (Command Line Interface)**: Translates native bash instructions (`ls`, `mkdir`, `touch`) into HTTP REST requests against the active `/api/files` MongoDB backend, simulating a true environment relative to the user's virtual drive.
+*   **Safari (Web Browser)**: Utilizes isolated `<iframes>` with a multi-tab state engine. Features dynamic URI parsing for external search engine fallback and array state logic for persistent Bookmarks.
+*   **Jarvis (AI Assistant)**: A high-tech conversational UI that interfaces via HTTP POST with the Python `/api/ai/chat` blueprint, utilizing the OpenAI ecosystem (or an offline simulated payload) for rigorous development and research assistance.
+*   **AquaMail (Mail Client)**: Showcases three market-first innovations: A DOM-blurring `backdrop-filter` Zen Compose Mode, a real-time regex-powered Smart Action Extractor, and a reactive `framer-motion` Burn-After-Reading self-destruct sequence.
+*   **Photos (Image Gallery)**: Implements a responsive CSS masonry grid architecture combined with an HTML5 Drag-and-Drop zone, dynamically parsing `FileReader` blobs into Base64 strings for immediate rendering. 
+*   **Music (Mini-Player)**: A persistent, framer-motion `drag` widget bypassing standard Window bounds constraints. Manages `HTMLAudioElement` DOM states tied to infinite visual rotation animations.
+*   **System Settings**: Directly mutates the global `useAppStore` context to instantly hot-swap the Desktop geometry and injects a `.dark` class modifier into the root HTML element for system-wide Tailwind conditional overrides.
+*   **System Options (Apple Menu)**: A global dropdown mapped to the MenuBar's Apple (``) icon. It mutates the `isAsleep` store state to mount a unified screen-dimming overlay, and executes `localStorage` cache invalidation to logically terminate authenticated sessions.
+*   **Siri (Voice Integration)**: Implements the browser's native `SpeechRecognition` API on a `continuous = true` loop. Voice patterns are evaluated through runtime string-matching to dispatch system-level OS commands.
 
 ## 3. Environment & Deployment Guide
 

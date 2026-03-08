@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { Dock } from './Dock';
 import { MenuBar } from './MenuBar';
 import { DesktopIcon } from './DesktopIcon';
-import { Folder, FileText } from 'lucide-react';
+import { Folder, FileText, Mail, Cpu } from 'lucide-react';
 import { ContextMenu } from './ContextMenu';
+import { useAppStore } from '../store/useAppStore';
+import { MusicWidget } from './MusicWidget';
 
 export function Desktop({ children }: { children?: React.ReactNode }) {
     const [contextMenu, setContextMenu] = useState<{ x: number, y: number } | null>(null);
-    const [wallpaper, setWallpaper] = useState('https://images.unsplash.com/photo-1611083360739-bdad6e0eb1fa?q=80&w=2600&auto=format&fit=crop');
+    const { wallpaper, setWallpaper, openApp } = useAppStore();
 
     const wallpapers = [
         'https://images.unsplash.com/photo-1611083360739-bdad6e0eb1fa?q=80&w=2600&auto=format&fit=crop', // Big Sur
@@ -37,7 +39,7 @@ export function Desktop({ children }: { children?: React.ReactNode }) {
         { label: 'Sort By', action: () => console.log('Sort') },
         { label: 'Clean Up', action: () => console.log('Clean') },
         { type: 'separator' as const, label: '', action: () => { } },
-        { label: 'Desktop Settings...', action: () => console.log('Settings') },
+        { label: 'Desktop Settings...', action: () => openApp('settings', 'System Settings', 'settings') },
     ];
 
     return (
@@ -52,8 +54,12 @@ export function Desktop({ children }: { children?: React.ReactNode }) {
             <div className="relative flex-1 w-full pt-10 px-4 flex flex-col flex-wrap gap-4 content-end items-end">
                 <DesktopIcon id="documents" title="Documents" icon={<Folder size={32} />} />
                 <DesktopIcon id="readme" title="README.txt" icon={<FileText size={32} />} />
+                <DesktopIcon id="mail" title="Mail" icon={<Mail size={32} />} />
+                <DesktopIcon id="jarvis" title="Jarvis" icon={<Cpu size={32} />} />
                 {children}
             </div>
+
+            <MusicWidget />
 
             <Dock />
 

@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useAppStore } from '../store/useAppStore';
 
 export function TerminalApp() {
     const [history, setHistory] = useState<string[]>(['Welcome to AquaDesk Terminal', 'Type "help" to see available commands.']);
     const [input, setInput] = useState('');
     const bottomRef = useRef<HTMLDivElement>(null);
+    const currentUser = useAppStore(state => state.currentUser);
 
-    const handleCommand = (e: React.FormEvent) => {
+    const handleCommand = async (e: React.FormEvent) => {
         e.preventDefault();
         const cmd = input.trim().toLowerCase();
         let response = '';
@@ -22,14 +24,52 @@ export function TerminalApp() {
                 response = new Date().toString();
                 break;
             case 'whoami':
-                response = 'aquadesk_user';
+                response = currentUser || 'guest';
                 break;
             case 'ls':
-                response = 'Documents  Downloads  Desktop  Applications';
+                try {
+                    const res = await fetch('http://localhost:5000/api/files', {
+                        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                    });
+                    if (res.ok) {
+                        const files = await res.json();
+                        response = files.map((f: any) =>
+                            f.type === 'folder' ? `<dir> ${f.name}` : `      ${f.name}`
+                        ).join('\n');
+                    } else {
+                        response = 'ls: cannot access files';
+                    }
+                } catch (err) {
+                    response = 'ls: connection error';
+                }
                 break;
             default:
                 if (cmd.startsWith('echo ')) {
                     response = cmd.slice(5);
+                } else if (cmd.startsWith('mkdir ') || cmd.startsWith('touch ')) {
+                    const isDir = cmd.startsWith('mkdir');
+                    const name = cmd.slice(6).trim();
+                    if (!name) {
+                        response = isDir ? 'mkdir: missing operand' : 'touch: missing operand';
+                    } else {
+                        try {
+                            const res = await fetch('http://localhost:5000/api/files', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                                },
+                                body: JSON.stringify({ name, type: isDir ? 'folder' : 'file', size: isDir ? '--' : '0 B' })
+                            });
+                            if (res.ok) {
+                                response = '';
+                            } else {
+                                response = `cannot create ${name}: server error`;
+                            }
+                        } catch (err) {
+                            response = `cannot create ${name}: connection error`;
+                        }
+                    }
                 } else if (cmd === '') {
                     response = '';
                 } else {

@@ -1,13 +1,15 @@
 import React from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { useAppStore } from '../store/useAppStore';
-import { Monitor, Terminal as TerminalIcon, FileText, Calculator, Compass, MessageSquare, Mail, Play, Settings } from 'lucide-react';
+import { Monitor, Terminal as TerminalIcon, FileText, Calculator, Compass, MessageSquare, Mail, Settings, Cpu, Image as ImageIcon } from 'lucide-react';
 
 const APPS = [
     { id: 'finder', title: 'Finder', icon: Monitor, color: 'bg-blue-500' },
     { id: 'safari', title: 'Safari', icon: Compass, color: 'bg-blue-400' },
     { id: 'messages', title: 'Messages', icon: MessageSquare, color: 'bg-green-500' },
     { id: 'mail', title: 'Mail', icon: Mail, color: 'bg-blue-300' },
+    { id: 'jarvis', title: 'Jarvis', icon: Cpu, color: 'bg-purple-600' },
+    { id: 'photos', title: 'Photos', icon: ImageIcon, color: 'bg-white text-blue-500' },
     { id: 'notes', title: 'Notes', icon: FileText, color: 'bg-yellow-500' },
     { id: 'calc', title: 'Calculator', icon: Calculator, color: 'bg-orange-500' },
     { id: 'terminal', title: 'Terminal', icon: TerminalIcon, color: 'bg-gray-800' },

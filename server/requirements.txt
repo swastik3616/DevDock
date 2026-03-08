@@ -4,3 +4,4 @@ flask-pymongo
 pyjwt
 bcrypt
 python-dotenv
+requests

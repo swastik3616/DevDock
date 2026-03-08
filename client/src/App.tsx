@@ -1,5 +1,6 @@
 import { Desktop } from './components/Desktop';
 import { Window } from './components/Window';
+import { useEffect } from 'react';
 import { useAppStore } from './store/useAppStore';
 import { NotesApp } from './apps/NotesApp';
 import { TerminalApp } from './apps/TerminalApp';
@@ -7,12 +8,24 @@ import { FinderApp } from './apps/FinderApp';
 import { CalculatorApp } from './apps/CalculatorApp';
 import { SafariApp } from './apps/SafariApp';
 import { SiriApp } from './apps/SiriApp';
+import { MailApp } from './apps/MailApp';
+import { SettingsApp } from './apps/SettingsApp';
+import { JarvisApp } from './apps/JarvisApp';
+import { PhotosApp } from './apps/PhotosApp';
 import { LoginScreen } from './components/LoginScreen';
 
 import { motion, AnimatePresence } from 'framer-motion';
 
 function App() {
-  const { windows, currentUser, setAuth, isAsleep, toggleSleep } = useAppStore();
+  const { windows, currentUser, setAuth, isAsleep, toggleSleep, theme } = useAppStore();
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
 
   if (!currentUser) {
     return <LoginScreen onLogin={setAuth} />;
@@ -30,6 +43,14 @@ function App() {
         return <CalculatorApp />;
       case 'safari':
         return <SafariApp />;
+      case 'mail':
+        return <MailApp />;
+      case 'settings':
+        return <SettingsApp />;
+      case 'jarvis':
+        return <JarvisApp />;
+      case 'photos':
+        return <PhotosApp />;
       default:
         return null;
     }
