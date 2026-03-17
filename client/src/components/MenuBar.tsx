@@ -24,6 +24,11 @@ export function MenuBar() {
         setIsAppleMenuOpen(false);
     };
 
+    const handleShutdown = () => {
+        setIsAppleMenuOpen(false);
+        useAppStore.getState().shutdown();
+    };
+
     const formatTime = (date: Date) => {
         return date.toLocaleTimeString('en-US', {
             hour: 'numeric',
@@ -73,7 +78,7 @@ export function MenuBar() {
                                     Restart...
                                 </button>
                                 <button
-                                    onClick={handleLogout}
+                                    onClick={handleShutdown}
                                     className="w-full text-left px-4 py-1.5 hover:bg-blue-500 hover:text-white transition-colors text-white whitespace-nowrap"
                                 >
                                     Shut Down...

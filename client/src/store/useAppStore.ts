@@ -16,6 +16,7 @@ interface AppState {
     currentUser: string | null;
     isSiriOpen: boolean;
     isAsleep: boolean;
+    isShuttingDown: boolean;
     wallpaper: string;
     theme: 'light' | 'dark';
     openApp: (id: string, title: string, icon: string) => void;
@@ -28,6 +29,7 @@ interface AppState {
     setAuth: (user: string | null) => void;
     setWallpaper: (url: string) => void;
     setTheme: (theme: 'light' | 'dark') => void;
+    shutdown: () => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -36,12 +38,14 @@ export const useAppStore = create<AppState>((set) => ({
     currentUser: null,
     isSiriOpen: false,
     isAsleep: false,
+    isShuttingDown: false,
     wallpaper: 'https://images.unsplash.com/photo-1611083360739-bdad6e0eb1fa?q=80&w=2600&auto=format&fit=crop',
     theme: 'light',
     setAuth: (user) => set({ currentUser: user }),
     toggleSleep: () => set((state) => ({ isAsleep: !state.isAsleep })),
     setWallpaper: (url) => set({ wallpaper: url }),
     setTheme: (theme) => set({ theme }),
+    shutdown: () => set({ isShuttingDown: true }),
     openApp: (id, title, icon) => set((state) => {
         const existing = state.windows.find(w => w.id === id);
         if (existing) {
