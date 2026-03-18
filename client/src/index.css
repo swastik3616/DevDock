@@ -158,55 +158,55 @@ button:focus-visible {
   opacity: 0.5;
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* -----------------------------------------------------------
    3-D MacBook Intro Scene
-═══════════════════════════════════════════════════════════ */
+----------------------------------------------------------- */
 
 .mb-scene {
   position: fixed;
   inset: 0;
-  background: radial-gradient(ellipse at 50% 40%, #0a1628 0%, #000 75%);
+  background: radial-gradient(ellipse at 50% 45%, #0a1628 0%, #000 75%);
   display: flex;
   align-items: center;
   justify-content: center;
-  perspective: 1400px;
-  perspective-origin: 50% 50%;
+  perspective: 900px;
+  perspective-origin: 50% 60%;
   z-index: 99999;
   overflow: hidden;
   cursor: pointer;
 }
 
-/* ── Starfield ── */
 .starfield {
   position: absolute;
   inset: 0;
   background-image:
-    radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,.65) 0%, transparent 100%),
-    radial-gradient(1px 1px at 30% 70%, rgba(255,255,255,.4) 0%, transparent 100%),
-    radial-gradient(1.5px 1.5px at 55% 25%, rgba(255,255,255,.55) 0%, transparent 100%),
-    radial-gradient(1px 1px at 75% 55%, rgba(255,255,255,.35) 0%, transparent 100%),
-    radial-gradient(1px 1px at 20% 85%, rgba(255,255,255,.45) 0%, transparent 100%),
-    radial-gradient(1.5px 1.5px at 85% 10%, rgba(255,255,255,.55) 0%, transparent 100%),
-    radial-gradient(1px 1px at 60% 90%, rgba(255,255,255,.3) 0%, transparent 100%),
-    radial-gradient(1px 1px at 45% 42%, rgba(255,255,255,.4) 0%, transparent 100%),
-    radial-gradient(1px 1px at 92% 75%, rgba(255,255,255,.5) 0%, transparent 100%),
-    radial-gradient(1px 1px at 5% 50%, rgba(255,255,255,.35) 0%, transparent 100%),
-    radial-gradient(1px 1px at 70% 30%, rgba(255,255,255,.4) 0%, transparent 100%),
-    radial-gradient(1px 1px at 38% 55%, rgba(255,255,255,.3) 0%, transparent 100%);
+    radial-gradient(1px 1px at 8% 12%, rgba(255,255,255,.7) 0%, transparent 100%),
+    radial-gradient(1px 1px at 28% 68%, rgba(255,255,255,.4) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 52% 22%, rgba(255,255,255,.55) 0%, transparent 100%),
+    radial-gradient(1px 1px at 72% 52%, rgba(255,255,255,.35) 0%, transparent 100%),
+    radial-gradient(1px 1px at 18% 83%, rgba(255,255,255,.45) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 83% 8%, rgba(255,255,255,.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 58% 88%, rgba(255,255,255,.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 43% 40%, rgba(255,255,255,.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 90% 72%, rgba(255,255,255,.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 3% 48%, rgba(255,255,255,.35) 0%, transparent 100%),
+    radial-gradient(1px 1px at 67% 28%, rgba(255,255,255,.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 35% 53%, rgba(255,255,255,.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 95% 35%, rgba(255,255,255,.45) 0%, transparent 100%),
+    radial-gradient(1px 1px at 15% 60%, rgba(255,255,255,.35) 0%, transparent 100%);
   animation: starsTwinkle 6s ease-in-out infinite alternate;
   pointer-events: none;
 }
 
 @keyframes starsTwinkle {
-  from { opacity: 0.65; }
-  to   { opacity: 1;    }
+  from { opacity: 0.6; }
+  to   { opacity: 1;   }
 }
 
-/* ── Hint text ── */
 .macbook-hint {
   position: absolute;
   bottom: 52px;
-  color: rgba(255,255,255,.45);
+  color: rgba(255,255,255,.5);
   font-size: 13px;
   letter-spacing: .14em;
   text-transform: uppercase;
@@ -216,42 +216,39 @@ button:focus-visible {
 }
 
 @keyframes hintPulse {
-  0%, 100% { opacity: .25; }
-  50%       { opacity: .75; }
+  0%, 100% { opacity: .2; }
+  50%       { opacity: .8; }
 }
 
-/* ── Outer 3D container – JS sets translateY + rotateX + rotateY ── */
-.mb-outer {
+/* -- Flex-column 3D container: lid (top) + base (bottom) -- */
+.mb-perspective {
   transform-style: preserve-3d;
-  position: relative;
-  width: 500px;
-  height: 320px;  /* height of base only (lid positioned above via 3D) */
-  filter: drop-shadow(0 50px 80px rgba(0,100,255,.2)) drop-shadow(0 30px 50px rgba(0,0,0,.9));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  filter: drop-shadow(0 40px 60px rgba(30,100,255,.35))
+          drop-shadow(0 15px 35px rgba(0,0,0,.95));
 }
 
-/* ════════════════════
+/* --------------------
    BASE / KEYBOARD
-════════════════════ */
+-------------------- */
 .mb-base {
-  position: absolute;
-  inset: 0;
   background: linear-gradient(165deg, #2c2c2e 0%, #1c1c1e 50%, #111 100%);
   border-radius: 12px 12px 24px 24px;
   border: 1.5px solid #3a3a3c;
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.07),
     inset 0 -1px 0 rgba(0,0,0,.5),
-    0 2px 0 #0a0a0a;
+    0 3px 0 #060606;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px 24px 0;
+  padding: 18px 22px 0;
   box-sizing: border-box;
-  /* thickness */
-  transform: translateZ(-8px);
+  flex-shrink: 0;
 }
 
-/* keyboard area */
 .mb-keys {
   display: grid;
   grid-template-columns: repeat(13, 1fr);
@@ -261,17 +258,16 @@ button:focus-visible {
 }
 
 .mb-key {
-  height: 20px;
+  height: 19px;
   background: linear-gradient(160deg, #313133, #1e1e20);
   border-radius: 3px;
   border: 1px solid #404042;
   box-shadow: 0 2px 0 #0d0d0d, inset 0 1px 0 rgba(255,255,255,.05);
 }
 
-/* trackpad */
 .mb-trackpad {
-  width: 155px;
-  height: 96px;
+  width: 150px;
+  height: 90px;
   background: linear-gradient(145deg, #242426, #1a1a1c);
   border-radius: 8px;
   border: 1px solid #38383a;
@@ -279,33 +275,28 @@ button:focus-visible {
   margin-top: 2px;
 }
 
-/* base bottom edge lip */
 .mb-base::after {
   content: '';
-  position: absolute;
-  bottom: 0;
-  left: 6%;
+  display: block;
   width: 88%;
   height: 12px;
   background: linear-gradient(to bottom, #1a1a1c, #0c0c0e);
   border-top: 1px solid #2c2c2e;
   border-radius: 0 0 22px 22px;
+  margin: 4px 0 0;
 }
 
-/* ════════════════════
+/* --------------------
    LID / DISPLAY
-════════════════════ */
-.mb-lid {
-  position: absolute;
-  bottom: 100%;   /* place at top edge of base */
-  left: 0;
-  width: 500px;
-  height: 318px;
+-------------------- */
+.mb-lid-wrap {
+  flex-shrink: 0;
   transform-origin: bottom center;
   transform-style: preserve-3d;
+  position: relative;
 }
 
-/* Front face: screen bezel */
+/* Front face: screen + bezel */
 .mb-lid-front {
   position: absolute;
   inset: 0;
@@ -315,34 +306,31 @@ button:focus-visible {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 12px 12px 8px;
+  padding: 10px 10px 6px;
   box-sizing: border-box;
   backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
-/* webcam dot */
 .mb-camera {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #2c2c2e;
-  box-shadow: 0 0 0 1px #444;
+  background: #2a2a2c;
+  box-shadow: 0 0 0 1px #3a3a3c;
   flex-shrink: 0;
   margin-bottom: 6px;
 }
 
-/* display panel */
 .mb-screen {
-  flex: 1;
-  width: 100%;
-  background: #000;
-  border-radius: 5px;
+  border-radius: 4px;
   overflow: hidden;
+  background: #000;
   transition: opacity 0.5s ease;
   position: relative;
 }
 
-/* Back face: gloss lid with Apple logo */
+/* Lid back: Apple logo side */
 .mb-lid-back {
   position: absolute;
   inset: 0;
@@ -350,16 +338,16 @@ button:focus-visible {
   border-radius: 14px 14px 3px 3px;
   border: 1.5px solid #2a2a2c;
   backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   transform: rotateX(180deg);
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: .9;
 }
 
-/* ════════════════════
+/* --------------------
    Boot Screen
-════════════════════ */
+-------------------- */
 .boot-screen {
   width: 100%;
   height: 100%;
@@ -371,13 +359,11 @@ button:focus-visible {
   gap: 24px;
 }
 
-.boot-apple {
-  animation: bootApplePulse 1.2s ease-in-out infinite alternate;
-}
+.boot-apple { animation: bootApplePulse 1.2s ease-in-out infinite alternate; }
 
 @keyframes bootApplePulse {
-  from { opacity: .65; }
-  to   { opacity: 1;   }
+  from { opacity: .6; }
+  to   { opacity: 1;  }
 }
 
 .boot-bar-track {
@@ -395,9 +381,9 @@ button:focus-visible {
   transition: width 0.1s linear;
 }
 
-/* ════════════════════
+/* --------------------
    Shutdown Screen
-════════════════════ */
+-------------------- */
 .shutdown-screen {
   width: 100%;
   height: 100%;
