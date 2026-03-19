@@ -3,7 +3,7 @@
 ## Overview
 AquaDesk is a sophisticated web-based operating system simulation designed to replicate the macOS experience from the ground up. The architecture leverages a decoupled client-server model, utilizing React for the presentation layer and a RESTful Python (Flask) API for backend services and data persistence via MongoDB.
 
-A defining experience is the **3-D MacBook Intro sequence**: the user is greeted by a fully animated, perspective-correct MacBook model that opens its lid, plays a boot animation, and transitions into the live OS — then closes its lid gracefully on shutdown.
+A defining experience is the **MacBook Intro sequence**: on first load the user sees a pure-black screen with a centered Apple logo (exactly like a real MacBook lid). Clicking the logo triggers a 3-D lid-open animation that reveals the MacBook in a straight-on perspective; the screen then auto-boots and presents the Login screen. Shutdown reverses the sequence, closing the lid gracefully.
 
 ---
 
@@ -40,35 +40,39 @@ A RESTful API built on the Python **Flask** micro-framework.
 The entire startup/shutdown sequence is coordinated between `App.tsx`, `MacBookIntro.tsx`, and the `useAppStore` Zustand store.
 
 ```
-                    ┌──────────────┐
-                    │  idle phase  │  ← floating MacBook, "Click to power on"
-                    └──────┬───────┘
-                           │ user click
-                    ┌──────▼───────┐
-                    │  opening     │  ← lid animates open (rAF, cubic ease)
-                    └──────┬───────┘
+                    ┌──────────────────┐
+                    │  closed phase    │  ← Full-screen black + Apple logo
+                    │  (first load)    │     "Click to open"
+                    └──────┬───────────┘
+                           │ click Apple logo
+                    ┌──────▼───────────┐
+                    │  opening         │  ← Lid swings open (rAF, cubic ease)
+                    │                  │     MacBook scales from fullscreen
+                    │                  │     to straight-on laptop view
+                    └──────┬───────────┘
                            │ lid fully open
-                    ┌──────▼───────┐
-                    │  booting     │  ← Apple logo + progress bar (BootScreen)
-                    └──────┬───────┘
-                           │ 2.4 s boot delay
-                    ┌──────▼───────┐
-                    │  os (live)   │  ← LoginScreen → Desktop
-                    └──────┬───────┘
+                    ┌──────▼───────────┐
+                    │  booting         │  ← Apple logo + progress bar
+                    │                  │     auto-plays on screen (2.6 s)
+                    └──────┬───────────┘
+                           │ boot complete
+                    ┌──────▼───────────┐
+                    │  os (live)       │  ← LoginScreen → Desktop
+                    └──────┬───────────┘
             shutdown()     │
-         in store   ┌──────▼───────┐
-                    │  shutdown    │  ← ShutdownScreen spinner
-                    └──────┬───────┘
-                           │ 2.6 s delay
-                    ┌──────▼───────┐
-                    │  closing     │  ← lid animates shut
-                    └──────┬───────┘
+         in store   ┌──────▼───────────┐
+                    │  shutdown        │  ← ShutdownScreen spinner
+                    └──────┬───────────┘
+                           │ 2.4 s delay
+                    ┌──────▼───────────┐
+                    │  closing         │  ← lid animates shut
+                    └──────┬───────────┘
                            │ animation complete
-                    └── back to idle, auth cleared
+                    └── back to closed phase, auth cleared
 ```
 
 ### Key Components
-- **`MacBookIntro.tsx`** — Two independent `requestAnimationFrame` loops (idle float vs. lid animation) prevent state-management conflicts. Exposes `onReady`, `onShutdown`, and `triggerShutdown` props.
+- **`MacBookIntro.tsx`** — Manages six phases (`closed → opening → booting → os → shutdown → closing`). Uses a single `requestAnimationFrame` loop for the lid animation with cubic ease-in-out. On open, the MacBook scales from a fullscreen back-of-lid view down to a straight-on laptop perspective. Exposes `onReady`, `onShutdown`, and `triggerShutdown` props.
 - **`LoginScreen.tsx`** — Shown immediately after the OS layer mounts; hooks into `setAuth` and `shutdown`.
 - **`App.tsx`** — Orchestrates the `macBookPhase` state (`'intro' | 'os'`) and bridges the Zustand `isShuttingDown` flag to `MacBookIntro`.
 
@@ -221,7 +225,7 @@ aqua-desk/
 │       │   ├── DesktopIcon.tsx
 │       │   ├── Dock.tsx
 │       │   ├── LoginScreen.tsx
-│       │   ├── MacBookIntro.tsx   ← 3-D boot sequence
+│       │   ├── MacBookIntro.tsx   ← Closed-lid splash → lid open → boot
 │       │   ├── MenuBar.tsx
 │       │   ├── MusicWidget.tsx
 │       │   └── Window.tsx

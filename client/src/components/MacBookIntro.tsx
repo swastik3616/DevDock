@@ -1,6 +1,12 @@
 import { useEffect, useState, useRef } from 'react';
 
-type Phase = 'idle' | 'opening' | 'booting' | 'os' | 'shutdown' | 'closing';
+type Phase =
+  | 'closed'    // Full-screen Apple logo (back of lid)
+  | 'opening'   // Lid swinging open + MacBook scaling into view
+  | 'booting'   // MacBook fully open, front-facing, boot animation
+  | 'os'        // Hidden – OS has taken over
+  | 'shutdown'  // Screen fading to black
+  | 'closing';  // Lid swinging shut
 
 interface MacBookIntroProps {
   onReady: () => void;
@@ -8,47 +14,52 @@ interface MacBookIntroProps {
   triggerShutdown: boolean;
 }
 
-const W = 480;
-const LH = 300;
-const BH = 278;
+const W = 520;
+const LH = 325;
+const BH = 290;
 
 export function MacBookIntro({ onReady, onShutdown, triggerShutdown }: MacBookIntroProps) {
-  const [phase, setPhase] = useState<Phase>('idle');
+  const [phase, setPhase] = useState<Phase>('closed');
   const [lidAngle, setLidAngle] = useState(0);
-  const [floatY, setFloatY] = useState(0);
-  const [rockY, setRockY] = useState(0);
+  // Controls how much the MacBook has "scaled into view" during opening
+  const [revealProgress, setRevealProgress] = useState(0); // 0 = closed fullscreen, 1 = laptop visible
 
-  // Two separate rAF refs: one for idle loop, one for lid animation
-  const idleRef = useRef<number | null>(null);
   const animRef = useRef<number | null>(null);
   const busyRef = useRef(false);
-  const phaseRef = useRef<Phase>('idle');
+  const phaseRef = useRef<Phase>('closed');
 
   const setPhaseSync = (p: Phase) => {
     phaseRef.current = p;
     setPhase(p);
   };
 
-  const stopIdle = () => {
-    if (idleRef.current) { cancelAnimationFrame(idleRef.current); idleRef.current = null; }
-  };
   const stopAnim = () => {
     if (animRef.current) { cancelAnimationFrame(animRef.current); animRef.current = null; }
   };
 
-  /* ─── Idle float animation ─── */
-  useEffect(() => {
-    if (phase !== 'idle') return;
-    let t = 0;
+  /* ─── Lid animation ─── */
+  const animateLid = (from: number, to: number, duration: number, onDone: () => void) => {
+    stopAnim();
+    const steps = Math.round(duration * 60);
+    let i = 0;
     const tick = () => {
-      t += 0.01;
-      setFloatY(Math.sin(t) * 12);
-      setRockY(Math.sin(t * 0.6) * 8);
-      idleRef.current = requestAnimationFrame(tick);
+      i++;
+      const p = i / steps;
+      // Ease in-out cubic
+      const e = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+      setLidAngle(from + (to - from) * e);
+      setRevealProgress(e);
+      if (i < steps) {
+        animRef.current = requestAnimationFrame(tick);
+      } else {
+        setLidAngle(to);
+        setRevealProgress(1);
+        animRef.current = null;
+        onDone();
+      }
     };
-    idleRef.current = requestAnimationFrame(tick);
-    return stopIdle; // cleanup stops ONLY the idle loop
-  }, [phase]);
+    animRef.current = requestAnimationFrame(tick);
+  };
 
   /* ─── Shutdown trigger ─── */
   useEffect(() => {
@@ -56,22 +67,20 @@ export function MacBookIntro({ onReady, onShutdown, triggerShutdown }: MacBookIn
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [triggerShutdown]);
 
-  /* ─── Click to power on ─── */
+  /* ─── Click the Apple logo to open ─── */
   const handleClick = () => {
-    if (phaseRef.current !== 'idle' || busyRef.current) return;
+    if (phaseRef.current !== 'closed' || busyRef.current) return;
     busyRef.current = true;
-    stopIdle();
-    setFloatY(0); setRockY(0);
     setPhaseSync('opening');
 
-    // Use setTimeout 0 so React flushes the phase update before rAF starts
     setTimeout(() => {
-      animateLid(0, 105, 1.8, () => {
+      animateLid(0, 105, 2.0, () => {
         setPhaseSync('booting');
         setTimeout(() => {
           setPhaseSync('os');
+          busyRef.current = false;
           onReady();
-        }, 2400);
+        }, 2600);
       });
     }, 0);
   };
@@ -83,52 +92,72 @@ export function MacBookIntro({ onReady, onShutdown, triggerShutdown }: MacBookIn
     setPhaseSync('shutdown');
     setTimeout(() => {
       setPhaseSync('closing');
-      animateLid(105, 0, 1.8, () => {
-        setPhaseSync('idle');
+      animateLid(105, 0, 2.0, () => {
+        setRevealProgress(0);
+        setPhaseSync('closed');
         busyRef.current = false;
         onShutdown();
       });
-    }, 2600);
+    }, 2400);
   };
 
-  /* ─── Lid animation (uses separate animRef) ─── */
-  const animateLid = (from: number, to: number, duration: number, onDone: () => void) => {
-    stopAnim();
-    const steps = Math.round(duration * 60);
-    let i = 0;
-    const tick = () => {
-      i++;
-      const p = i / steps;
-      const e = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
-      setLidAngle(from + (to - from) * e);
-      if (i < steps) {
-        animRef.current = requestAnimationFrame(tick);
-      } else {
-        setLidAngle(to);
-        animRef.current = null;
-        onDone();
-      }
-    };
-    animRef.current = requestAnimationFrame(tick);
-  };
-
-  if (phase === 'os') return null;
+  /* ─── Derived visuals ─── */
+  // During closing, revealProgress goes 1→0, so we invert
+  const closingProgress = phase === 'closing' || phase === 'shutdown' ? 1 - revealProgress : revealProgress;
+  const isClosing = phase === 'closing' || phase === 'shutdown';
+  const rp = isClosing ? 1 - revealProgress : revealProgress;
 
   const screenLit = phase === 'booting' || phase === 'shutdown' || phase === 'closing';
   const screenOpacity = screenLit ? Math.min(1, (lidAngle - 5) / 30) : 0;
 
+  // Phase 'os' → invisible
+  if (phase === 'os') return null;
+
+  // ── Closed state: full-screen Apple logo ──
+  if (phase === 'closed') {
+    return (
+      <div className="mbi-closed-screen" onClick={handleClick}>
+        <div className="mbi-closed-glow" />
+        <div className="mbi-apple-wrap">
+          <svg viewBox="0 0 814 1000" fill="url(#appleGrad)" className="mbi-apple-svg">
+            <defs>
+              <linearGradient id="appleGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#d0d0d0" />
+                <stop offset="50%" stopColor="#a8a8a8" />
+                <stop offset="100%" stopColor="#787878" />
+              </linearGradient>
+            </defs>
+            <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-57.8-155.5-127.4C46 790.7 0 663 0 541.8c0-207.5 135.4-317.3 269-317.3 70.1 0 128.4 46.4 172.5 46.4 42.8 0 109.6-49.1 190.5-49.1zM549.1 87.2c32.3-38.5 56.5-92.3 56.5-146.1 0-7.5-.6-15.1-2-21.7-53.6 2-117 35.6-155.5 79.4-29.6 33.4-58.1 87.2-58.1 141.9 0 8.1 1.4 16.3 2 19.4 3.2.6 8.1 1.4 13 1.4 48.4 0 109.6-32.3 144.1-74.3z"/>
+          </svg>
+          <p className="mbi-closed-hint">Click to open</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Opening / Booting / Closing / Shutdown states ──
+  // The MacBook scales in from "fullscreen back view" → proper laptop size
+  // rp: 0 = just starting (large, back-facing), 1 = fully open (laptop size)
+  const ease = rp;
+
+  // Scale: start huge (so only Apple logo fills screen), shrink to normal
+  const scale = 2.8 - ease * 1.8; // 2.8 → 1.0
+  // Slight perspective tilt – straight on when fully open
+  const tiltX = -22 + ease * 17;  // -22 → -5 deg
+  const tiltY = ease * 0;
+
   return (
-    <div className="mb-scene" onClick={handleClick}>
+    <div className="mbi-scene">
       <div className="starfield" />
-      {phase === 'idle' && <p className="macbook-hint">Click to power on</p>}
 
       <div
         className="mb-perspective"
         style={{
-          transform: `translateY(${floatY}px) rotateX(-22deg) rotateY(${rockY}deg)`,
+          transform: `scale(${scale}) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`,
+          transition: phase === 'booting' ? 'transform 0.6s ease' : 'none',
         }}
       >
-        {/* Lid – hinges at the bottom edge of lid (= hinge with base) */}
+        {/* Lid – hinges at bottom */}
         <div
           className="mb-lid-wrap"
           style={{
@@ -149,9 +178,10 @@ export function MacBookIntro({ onReady, onShutdown, triggerShutdown }: MacBookIn
               {(phase === 'shutdown' || phase === 'closing') && <ShutdownScreen />}
             </div>
           </div>
-          {/* Lid back */}
+
+          {/* Lid back (Apple logo) */}
           <div className="mb-lid-back" style={{ width: W, height: LH }}>
-            <svg viewBox="0 0 24 24" fill="#555" style={{ width: 44, height: 44 }}>
+            <svg viewBox="0 0 24 24" fill="#666" style={{ width: 48, height: 48 }}>
               <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
             </svg>
           </div>

@@ -162,6 +162,70 @@ button:focus-visible {
    3-D MacBook Intro Scene
 ----------------------------------------------------------- */
 
+/* ─── Closed lid: full-screen Apple logo ─── */
+.mbi-closed-screen {
+  position: fixed;
+  inset: 0;
+  background: #0a0a0a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.mbi-closed-glow {
+  position: absolute;
+  width: 340px;
+  height: 340px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(160,160,160,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.mbi-apple-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  animation: mbiAppleIn 1s ease forwards;
+}
+
+.mbi-apple-svg {
+  width: 88px;
+  height: 88px;
+  filter: drop-shadow(0 0 18px rgba(200,200,200,0.18));
+}
+
+.mbi-closed-hint {
+  color: rgba(255,255,255,0.28);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-family: -apple-system, 'Inter', sans-serif;
+  animation: hintPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes mbiAppleIn {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ─── Opening/booting scene ─── */
+.mbi-scene {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 45%, #0a1628 0%, #000 75%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1100px;
+  perspective-origin: 50% 55%;
+  z-index: 99999;
+  overflow: hidden;
+}
+
 .mb-scene {
   position: fixed;
   inset: 0;
