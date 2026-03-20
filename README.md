@@ -1,15 +1,13 @@
 # AquaDesk — DevDock OS Architecture & Documentation
 
 ## Overview
-AquaDesk is a sophisticated web-based operating system simulation designed to replicate the macOS experience from the ground up. The architecture leverages a decoupled client-server model, utilizing React for the presentation layer and a RESTful Python (Flask) API for backend services and data persistence via MongoDB.
+AquaDesk is a sophisticated web-based operating system simulation that replicates the macOS experience from the ground up. It uses a decoupled client-server model — **React 19 + TypeScript** on the frontend and a **Python Flask** REST API on the backend, with **MongoDB** for persistence.
 
-A defining experience is the **MacBook Intro sequence**: on first load the user sees a pure-black screen with a centered Apple logo (exactly like a real MacBook lid). Clicking the logo triggers a 3-D lid-open animation that reveals the MacBook in a straight-on perspective; the screen then auto-boots and presents the Login screen. Shutdown reverses the sequence, closing the lid gracefully.
+A defining experience is the **MacBook Intro sequence**: on first load the user sees a pure-black screen with a centered Apple logo (exactly like a real MacBook lid). Clicking the logo triggers a 3-D lid-open animation that reveals the MacBook; the screen then auto-boots into the Login screen. Shutdown reverses the sequence, closing the lid gracefully.
 
 ---
 
 ## 1. System Architecture
-
-The application is structured into two primary domains:
 
 ### 1.1 Frontend (Client)
 A single-page application (SPA) built with **React 19**, **TypeScript 5**, and **Vite**.
@@ -18,7 +16,7 @@ A single-page application (SPA) built with **React 19**, **TypeScript 5**, and *
 |---|---|
 | UI Animation & Drag | `framer-motion` v12 — physics-based dragging, window maximization, fade transitions |
 | Global State | `Zustand` v5 — manages window registry, auth, sleep/shutdown flags, theme, wallpaper |
-| Styling | Tailwind CSS v4 + custom CSS modules — glassmorphism, dark-mode, responsive layouts |
+| Styling | Tailwind CSS v4 + custom CSS — glassmorphism, dark-mode, responsive layouts |
 | Icons | `lucide-react` |
 | HTTP Client | `axios` with a JWT-injection request interceptor (`services/api.ts`) |
 | 3-D Intro | Pure CSS 3-D perspective + `requestAnimationFrame` (no Three.js dependency) |
@@ -32,12 +30,63 @@ A RESTful API built on the Python **Flask** micro-framework.
 | Authentication | Stateless JWT (`PyJWT`) + `bcrypt` password hashing |
 | CORS | `flask-cors` — maps `localhost:5173` → `localhost:5000` for local dev |
 | Routes | Modular blueprints: `auth`, `files`, `notes`, `music`, `ai` |
+| App Factory | `create_app()` pattern — enables test isolation without a live database |
 
 ---
 
-## 2. Boot & Shutdown Lifecycle
+## 2. Testing
 
-The entire startup/shutdown sequence is coordinated between `App.tsx`, `MacBookIntro.tsx`, and the `useAppStore` Zustand store.
+The project ships a full dual-layer test suite — **no mocks of real business logic** — that runs completely offline.
+
+### 2.1 Backend — Pytest (18 tests)
+
+| File | Covers |
+|---|---|
+| `tests/test_auth.py` | Register (success, duplicate, missing fields), login (success, wrong password, unknown user), `GET /auth/me` with valid / missing / invalid token |
+| `tests/test_notes.py` | GET empty list, POST creates note (user field stripped), PUT updates, DELETE success, DELETE 404 |
+| `tests/test_files.py` | GET seeds default files, POST upload, DELETE, PATCH rename, PATCH 404 |
+
+**How it works:** `create_app()` factory + a `MagicMock` whose `.db` is a real `mongomock` in-memory database. No live MongoDB required.
+
+```bash
+cd server
+pip install -r requirements.txt   # includes pytest, pytest-flask, mongomock
+pytest                             # reads config from pyproject.toml
+```
+
+### 2.2 Frontend — Vitest (15 tests)
+
+| File | Covers |
+|---|---|
+| `src/__tests__/store.test.ts` | Initial state, `openApp` (create + no-duplicate), `closeApp`, `minimizeApp`, `toggleMaximize`, `setAuth`, `setTheme` |
+| `src/__tests__/contextMenu.test.tsx` | Renders labels & shortcuts, position props applied as inline styles, click triggers action + `onClose` |
+| `src/__tests__/calculator.test.tsx` | Initial display "0", digit input, operator resets display, equals evaluates, AC clears |
+
+**Setup:** `vitest` + `@testing-library/react` + `jsdom`. Each store test starts with a `beforeEach` reset (`useAppStore.getInitialState()`) to prevent state bleed. All user interactions use `userEvent.setup()` (async).
+
+```bash
+cd client
+npm install
+npm test              # Vitest watch mode
+npm test -- --run     # single-pass CI mode
+```
+
+### 2.3 CI — GitHub Actions
+
+Two independent workflows, both triggered on push/PR to `main`:
+
+| Workflow | File | What it runs |
+|---|---|---|
+| **Frontend CI** | `.github/workflows/frontend-ci.yml` | `npm ci` → `vitest --run` → `tsc --noEmit` |
+| **Backend CI** | `.github/workflows/backend-ci.yml` | `pip install -r requirements.txt` → `pytest tests/ -v --tb=short` |
+
+Each workflow only triggers when files within its own directory (`client/**` or `server/**`) change, avoiding unnecessary re-runs.
+
+---
+
+## 3. Boot & Shutdown Lifecycle
+
+The startup/shutdown sequence is coordinated between `App.tsx`, `MacBookIntro.tsx`, and the `useAppStore` Zustand store.
 
 ```
                     ┌──────────────────┐
@@ -47,13 +96,11 @@ The entire startup/shutdown sequence is coordinated between `App.tsx`, `MacBookI
                            │ click Apple logo
                     ┌──────▼───────────┐
                     │  opening         │  ← Lid swings open (rAF, cubic ease)
-                    │                  │     MacBook scales from fullscreen
-                    │                  │     to straight-on laptop view
+                    │                  │     MacBook scales to straight-on view
                     └──────┬───────────┘
                            │ lid fully open
                     ┌──────▼───────────┐
-                    │  booting         │  ← Apple logo + progress bar
-                    │                  │     auto-plays on screen (2.6 s)
+                    │  booting         │  ← Apple logo + progress bar (2.6 s)
                     └──────┬───────────┘
                            │ boot complete
                     ┌──────▼───────────┐
@@ -66,181 +113,178 @@ The entire startup/shutdown sequence is coordinated between `App.tsx`, `MacBookI
                            │ 2.4 s delay
                     ┌──────▼───────────┐
                     │  closing         │  ← lid animates shut
-                    └──────┬───────────┘
-                           │ animation complete
                     └── back to closed phase, auth cleared
 ```
 
 ### Key Components
-- **`MacBookIntro.tsx`** — Manages six phases (`closed → opening → booting → os → shutdown → closing`). Uses a single `requestAnimationFrame` loop for the lid animation with cubic ease-in-out. On open, the MacBook scales from a fullscreen back-of-lid view down to a straight-on laptop perspective. Exposes `onReady`, `onShutdown`, and `triggerShutdown` props.
-- **`LoginScreen.tsx`** — Shown immediately after the OS layer mounts; hooks into `setAuth` and `shutdown`.
-- **`App.tsx`** — Orchestrates the `macBookPhase` state (`'intro' | 'os'`) and bridges the Zustand `isShuttingDown` flag to `MacBookIntro`.
+- **`MacBookIntro.tsx`** — Manages six phases (`closed → opening → booting → os → shutdown → closing`). Single `requestAnimationFrame` loop for the lid with cubic ease-in-out.
+- **`LoginScreen.tsx`** — Shown after OS mounts; hooks into `setAuth` and `shutdown`.
+- **`App.tsx`** — Orchestrates `macBookPhase` state and bridges the Zustand `isShuttingDown` flag to `MacBookIntro`.
 
 ---
 
-## 3. Core Components & Capabilities
+## 4. Core Components & Capabilities
 
-### 3.1 Window Management
-The `Window.tsx` component handles strict bounds-checking and virtualization.
-- **Maximization**: Subtracts the 32 px MenuBar offset (`calc(100vh - 32px)`) to prevent overlap with system UI. Drag events are disabled during maximized state.
-- **Focus / Z-index**: Clicking anywhere within a window elevates its `zIndex` in `useAppStore`.
+### 4.1 Window Management
+- **Maximization**: Subtracts 32 px MenuBar offset (`calc(100vh - 32px)`). Drag disabled when maximized.
+- **Focus / Z-index**: Clicking a window elevates its `zIndex` in `useAppStore`.
 
-### 3.2 Desktop Shell
-- **`Desktop.tsx`** — Renders the wallpaper/background and hosts all open windows.
-- **`Dock.tsx`** — Application launcher with magnification hover animations.
-- **`MenuBar.tsx`** — Persistent top bar with clock, Apple menu trigger, and active-app title.
-- **`ContextMenu.tsx`** — Right-click context menu on the desktop surface.
-- **`MusicWidget.tsx`** — A persistent floating mini-player that uses `framer-motion` drag outside normal window bounds. Manages `HTMLAudioElement` state with infinite rotation animations.
+### 4.2 Desktop Shell
 
-### 3.3 Application Ecosystem
+| Component | Role |
+|---|---|
+| `Desktop.tsx` | Renders wallpaper and hosts all open windows |
+| `Dock.tsx` | Application launcher with magnification hover animations |
+| `MenuBar.tsx` | Persistent top bar with clock, Apple menu, and active-app title |
+| `ContextMenu.tsx` | Right-click context menu (`role="menu"`, fully tested) |
+| `MusicWidget.tsx` | Floating mini-player using `framer-motion` drag outside normal window bounds |
+
+### 4.3 Application Ecosystem
 
 | App | Key Implementation Details |
 |---|---|
-| **Finder** | Full CRUD via `/api/files`. Inline state machine for file renaming. |
-| **Terminal** | Translates `ls`, `mkdir`, `touch`, `rm` into HTTP REST calls against `/api/files`. |
-| **Notes** | Persistent notes backed by `/api/notes` (MongoDB). Real-time save. |
-| **Calculator** | Stateful expression evaluator; pure client-side, no API calls. |
-| **Safari** | Multi-tab `<iframe>` engine with bookmark array state + URI/search fallback logic. |
-| **AquaMail** | Three innovations: DOM-blurring Zen Compose Mode, regex-powered Smart Action Extractor, and `framer-motion` Burn-After-Reading self-destruct sequence. |
-| **Photos** | CSS masonry grid + HTML5 Drag-and-Drop; parses `FileReader` blobs to Base64 for immediate rendering. |
-| **Music** | Backend route `/api/music` serves track metadata; `MusicWidget` manages playback state. |
-| **Jarvis (AI)** | Conversational UI; HTTP POST to `/api/ai/chat` using the configured AI backend. |
-| **Siri** | Browser-native `SpeechRecognition` API on a `continuous = true` loop; voice patterns dispatch system-level OS commands. |
-| **System Settings** | Two-tab panel: **Desktop** (wallpaper picker, 6 curated Unsplash images) and **Appearance** (Light / Dark theme toggle). Directly mutates `useAppStore`. |
+| **Finder** | Full CRUD via `/files`. Inline state machine for file renaming. |
+| **Terminal** | Translates `ls`, `mkdir`, `touch`, `rm` into REST calls against `/files`. |
+| **Notes** | Persistent via `/notes` (MongoDB). Real-time save. |
+| **Calculator** | Stateful expression evaluator; pure client-side, no API calls. Fully unit-tested. |
+| **Safari** | Multi-tab `<iframe>` engine with bookmark array state + URI/search fallback. |
+| **AquaMail** | DOM-blurring Zen Compose Mode, regex-powered Smart Action Extractor, `framer-motion` Burn-After-Reading sequence. |
+| **Photos** | CSS masonry grid + HTML5 Drag-and-Drop; parses `FileReader` blobs to Base64. |
+| **Music** | `/api/music` serves track metadata; `MusicWidget` manages playback state. |
+| **Jarvis (AI)** | Conversational UI; HTTP POST to `/api/ai/chat`. |
+| **Siri** | Browser-native `SpeechRecognition` API (`continuous = true`); voice patterns dispatch OS-level commands. |
+| **System Settings** | Desktop (wallpaper picker) and Appearance (Light/Dark toggle) — mutates `useAppStore` directly. |
 
-### 3.4 System Controls
-- **Sleep Mode**: `isAsleep` store flag mounts a full-screen black overlay (`z-[9999]`); click anywhere to wake.
-- **Shutdown**: Calls `shutdown()` in store → sets `isShuttingDown` → `MacBookIntro` plays the lid-close sequence → clears auth & window state on completion.
-- **Theme**: `setTheme()` toggles a `.dark` class on the root `<html>` element for system-wide Tailwind conditional overrides.
+### 4.4 System Controls
+- **Sleep Mode**: `isAsleep` flag mounts a full-screen black overlay; click anywhere to wake.
+- **Shutdown**: `shutdown()` → `isShuttingDown` → lid-close sequence → auth & window state cleared.
+- **Theme**: `setTheme()` toggles `.dark` on the root `<html>` element for Tailwind conditional overrides.
 
 ---
 
-## 4. Environment & Deployment Guide
+## 5. Environment & Deployment Guide
 
-### 4.1 Prerequisites
+### 5.1 Prerequisites
 - Node.js ≥ 18.x
 - Python ≥ 3.8
 - MongoDB instance (local daemon or Atlas URI)
 
-### 4.2 Backend Initialization
+### 5.2 Backend Setup
 ```bash
-# 1. Enter the server directory
 cd server
 
-# 2. Create and activate a virtual environment
-# Unix/macOS:
-python -m venv venv && source venv/bin/activate
-# Windows:
-python -m venv venv && venv\Scripts\activate
+# Create and activate virtual environment
+python -m venv venv && source venv/bin/activate   # Unix/macOS
+python -m venv venv && venv\Scripts\activate      # Windows
 
-# 3. Install Python dependencies
+# Install all dependencies (including test tools)
 pip install -r requirements.txt
 
-# 4. Create a .env file with:
-#    MONGO_URI=<your-mongodb-connection-string>
-#    JWT_SECRET=<a-secure-random-string>
+# Configure environment
+# Create server/.env:
+#   MONGO_URI=<your-mongodb-connection-string>
+#   JWT_SECRET=<a-secure-random-string>
 
-# 5. Start the Flask server (defaults to port 5000)
+# Start Flask server (port 5000)
 python app.py
+
+# Run tests (no live MongoDB required)
+pytest
 ```
 
-### 4.3 Frontend Initialization
+### 5.3 Frontend Setup
 ```bash
-# 1. Enter the client directory
 cd client
 
-# 2. Install Node dependencies
 npm install
 
-# 3. (Optional) Configure the API base URL
-#    Create client/.env:
-#    VITE_API_URL=http://localhost:5000
+# Optional: configure API base URL
+# Create client/.env:
+#   VITE_API_URL=http://localhost:5000
 
-# 4. Start the Vite dev server (defaults to port 5173)
-npm run dev
+npm run dev          # Vite dev server on port 5173
+npm test             # Vitest in watch mode
+npm test -- --run    # Single-pass (for CI)
 ```
 
-### 4.4 Docker Deployment (Containerized)
-The project includes a unified `docker-compose.yml` for seamless containerized deployment.
-
+### 5.4 Docker Deployment
 ```bash
-# Build and spin up the full stack (Frontend, Backend, MongoDB)
+# Build and spin up the full stack (Frontend + Backend + MongoDB)
 docker-compose up --build
 
-# Application is available at http://localhost:5173
+# App is available at http://localhost:5173
 
-# Tear down the environment
 docker-compose down
 ```
 
 ---
 
-## 5. API Reference
+## 6. API Reference
 
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/api/auth/register` | Register a new user |
-| `POST` | `/api/auth/login` | Authenticate and receive a JWT |
-| `GET` | `/api/files` | List virtual file system entries |
-| `POST` | `/api/files` | Create a new file or folder |
-| `PUT` | `/api/files/<id>` | Rename a file or folder |
-| `DELETE` | `/api/files/<id>` | Delete a file or folder |
-| `GET` | `/api/notes` | Retrieve all notes |
-| `POST` | `/api/notes` | Create or update a note |
-| `DELETE` | `/api/notes/<id>` | Delete a note |
-| `GET` | `/api/music` | Get available music tracks |
-| `POST` | `/api/ai/chat` | Send a message to the AI assistant |
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `POST` | `/auth/register` | — | Register a new user |
+| `POST` | `/auth/login` | — | Authenticate and receive a JWT |
+| `GET` | `/auth/me` | ✓ | Return current authenticated user |
+| `GET` | `/files` | ✓ | List virtual file system entries |
+| `POST` | `/files` | ✓ | Create a new file or folder |
+| `PATCH` | `/files/<id>` | ✓ | Rename a file or folder |
+| `DELETE` | `/files/<id>` | ✓ | Delete a file or folder |
+| `GET` | `/notes` | ✓ | Retrieve all notes |
+| `POST` | `/notes` | ✓ | Create a new note |
+| `PUT` | `/notes/<id>` | ✓ | Update a note |
+| `DELETE` | `/notes/<id>` | ✓ | Delete a note |
+| `GET` | `/api/music` | ✓ | Get available music tracks |
+| `POST` | `/api/ai/chat` | ✓ | Send a message to the AI assistant |
+
+> **Auth column**: ✓ = requires `Authorization: Bearer <token>` header.
 
 ---
 
-## 6. Security Considerations
-- **Password Hashing**: Passwords are hashed via `bcrypt` before persistence — plaintext is never stored.
-- **Token Expiry**: JWTs define session bounds; the client-side `axios` interceptor automatically attaches the `Authorization: Bearer <token>` header to every request.
+## 7. Security Considerations
+- **Password Hashing**: Passwords are hashed via `bcrypt` — plaintext is never stored.
+- **Token Expiry**: JWTs expire after 24 hours; the `axios` interceptor attaches the header automatically.
 - **Session Termination**: Shutdown clears `localStorage` and resets all Zustand auth state.
-- **Microphone Telemetry**: The Siri component operates strictly in-memory using the browser's sandbox `SpeechRecognition` API — no audio blobs are dispatched to the network.
-- **iFrame Isolation**: The Safari app's `<iframe>` elements are rendered in isolated browser contexts.
+- **Microphone**: Siri operates in-memory via the browser's sandboxed `SpeechRecognition` API — no audio is sent to the network.
+- **iFrame Isolation**: Safari app `<iframe>` elements run in isolated browser contexts.
 
 ---
 
-## 7. Project Structure
+## 8. Project Structure
 
 ```
 aqua-desk/
-├── client/                    # React SPA
+├── .github/
+│   └── workflows/
+│       ├── frontend-ci.yml        # Vitest + tsc type-check on every PR
+│       └── backend-ci.yml         # Pytest on every PR
+├── client/                        # React SPA
 │   └── src/
-│       ├── apps/              # Application windows
-│       │   ├── CalculatorApp.tsx
-│       │   ├── FinderApp.tsx
-│       │   ├── JarvisApp.tsx
-│       │   ├── MailApp.tsx
-│       │   ├── NotesApp.tsx
-│       │   ├── PhotosApp.tsx
-│       │   ├── SafariApp.tsx
-│       │   ├── SettingsApp.tsx
-│       │   ├── SiriApp.tsx
-│       │   └── TerminalApp.tsx
-│       ├── components/        # Shell & system UI
-│       │   ├── ContextMenu.tsx
-│       │   ├── Desktop.tsx
-│       │   ├── DesktopIcon.tsx
-│       │   ├── Dock.tsx
-│       │   ├── LoginScreen.tsx
-│       │   ├── MacBookIntro.tsx   ← Closed-lid splash → lid open → boot
-│       │   ├── MenuBar.tsx
-│       │   ├── MusicWidget.tsx
-│       │   └── Window.tsx
+│       ├── __tests__/             # Vitest test suite (15 tests)
+│       │   ├── store.test.ts
+│       │   ├── contextMenu.test.tsx
+│       │   └── calculator.test.tsx
+│       ├── apps/                  # Application windows
+│       ├── components/            # Shell & system UI
 │       ├── services/
-│       │   └── api.ts         # Axios instance with JWT interceptor
-│       └── store/
-│           └── useAppStore.ts # Zustand global state
-├── server/                    # Flask REST API
+│       │   └── api.ts             # Axios instance with JWT interceptor
+│       ├── store/
+│       │   └── useAppStore.ts     # Zustand global state
+│       └── setupTests.ts          # @testing-library/jest-dom matchers
+├── server/                        # Flask REST API
 │   ├── routes/
 │   │   ├── ai.py
 │   │   ├── auth.py
 │   │   ├── files.py
 │   │   ├── music.py
 │   │   └── notes.py
-│   ├── app.py
+│   ├── tests/                     # Pytest test suite (18 tests)
+│   │   ├── conftest.py            # Fixtures: app, client, auth_token
+│   │   ├── test_auth.py
+│   │   ├── test_notes.py
+│   │   └── test_files.py
+│   ├── app.py                     # create_app() factory
+│   ├── pyproject.toml             # Pytest configuration
 │   └── requirements.txt
 └── docker-compose.yml
 ```
