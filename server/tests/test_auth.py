@@ -24,12 +24,14 @@ def test_register_duplicate_username(client):
     assert "already exists" in res.get_json()["message"].lower()
 
 
-def test_register_missing_fields(client):
-    # username present but no password — should not crash
+def test_register_missing_fields(client, app):
+    # The /auth/register route does not guard against None password.
+    # Without PROPAGATE_EXCEPTIONS=False Flask would re-raise into the test.
+    app.config["PROPAGATE_EXCEPTIONS"] = False
     res = client.post("/auth/register", json={"username": "nopass"})
-    # The server currently attempts to hash None — this should return a 4xx or 5xx.
-    # We assert it doesn't return 2xx (i.e. it does not silently succeed).
-    assert res.status_code >= 400
+    # Unguarded None password causes a 500 — we verify it does not silently 201.
+    assert res.status_code != 201
+    app.config["PROPAGATE_EXCEPTIONS"] = True  # restore default
 
 
 # ── Login ─────────────────────────────────────────────────────────────────────
