@@ -5,3 +5,7 @@ pyjwt
 bcrypt
 python-dotenv
 requests
+# Testing
+pytest
+pytest-flask
+mongomock

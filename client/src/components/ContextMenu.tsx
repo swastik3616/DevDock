@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface ContextMenuProps {
@@ -34,6 +34,7 @@ export function ContextMenu({ x, y, onClose, items }: ContextMenuProps) {
         <AnimatePresence>
             <motion.div
                 ref={menuRef}
+                role="menu"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
