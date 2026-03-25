@@ -1,6 +1,7 @@
 {
   "name": "@swastik3616/aqua-desk",
-  "version": "1.0.0",
+  "version": "1.0.1",
+  "repository": "https://github.com/swastik3616/DevDock",
   "private": false,
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
