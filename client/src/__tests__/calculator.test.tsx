@@ -13,49 +13,47 @@ import { CalculatorApp } from '../apps/CalculatorApp';
 describe('CalculatorApp', () => {
   it('shows "0" as the initial display value', () => {
     render(<CalculatorApp />);
-    // The large display text — the only element with font-light text-4xl
-    expect(screen.getByText('0')).toBeInTheDocument();
+    expect(screen.getByTestId('display')).toHaveTextContent(/^0$/);
   });
 
   it('updates the display when digit buttons are clicked', async () => {
     const user = userEvent.setup();
     render(<CalculatorApp />);
 
-    await user.click(screen.getByText('5'));
-    expect(screen.getByText('5')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '5' }));
+    expect(screen.getByTestId('display')).toHaveTextContent(/^5$/);
 
-    await user.click(screen.getByText('3'));
-    expect(screen.getByText('53')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '3' }));
+    expect(screen.getByTestId('display')).toHaveTextContent(/^53$/);
   });
 
   it('resets display to "0" after pressing an operator', async () => {
     const user = userEvent.setup();
     render(<CalculatorApp />);
 
-    await user.click(screen.getByText('7'));
-    await user.click(screen.getByText('+'));
-    // After operator the display resets to '0' and equation is stored
-    expect(screen.getByText('0')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '7' }));
+    await user.click(screen.getByRole('button', { name: '+' }));
+    expect(screen.getByTestId('display')).toHaveTextContent(/^0$/);
   });
 
   it('evaluates the equation and shows the result when = is pressed', async () => {
     const user = userEvent.setup();
     render(<CalculatorApp />);
 
-    await user.click(screen.getByText('8'));
-    await user.click(screen.getByText('+'));
-    await user.click(screen.getByText('4'));
-    await user.click(screen.getByText('='));
+    await user.click(screen.getByRole('button', { name: '8' }));
+    await user.click(screen.getByRole('button', { name: '+' }));
+    await user.click(screen.getByRole('button', { name: '4' }));
+    await user.click(screen.getByRole('button', { name: '=' }));
 
-    expect(screen.getByText('12')).toBeInTheDocument();
+    expect(screen.getByTestId('display')).toHaveTextContent(/^12$/);
   });
 
   it('clears display and equation back to "0" when AC is pressed', async () => {
     const user = userEvent.setup();
     render(<CalculatorApp />);
 
-    await user.click(screen.getByText('9'));
-    await user.click(screen.getByText('AC'));
-    expect(screen.getByText('0')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '9' }));
+    await user.click(screen.getByRole('button', { name: 'AC' }));
+    expect(screen.getByTestId('display')).toHaveTextContent(/^0$/);
   });
 });

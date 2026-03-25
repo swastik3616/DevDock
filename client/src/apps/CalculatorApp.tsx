@@ -32,7 +32,7 @@ export function CalculatorApp() {
         <div className="h-full bg-[#1e1e1e] text-white p-4 flex flex-col gap-4 select-none">
             <div className="flex-1 flex flex-col justify-end items-end p-2">
                 <div className="text-white/40 text-sm h-6">{equation}</div>
-                <div className="text-4xl font-light">{display}</div>
+                <div data-testid="display" className="text-4xl font-light">{display}</div>
             </div>
 
             <div className="grid grid-cols-4 gap-2">
