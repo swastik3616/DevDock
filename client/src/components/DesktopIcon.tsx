@@ -15,7 +15,7 @@ export function DesktopIcon({ id, title, icon }: DesktopIconProps) {
         <motion.div
             drag
             dragMomentum={false}
-            onDoubleClick={() => openApp(id, title, id)}
+            onClick={() => openApp(id, title, id)}
             className="w-20 h-24 flex flex-col items-center justify-center gap-1 group cursor-default"
             whileTap={{ scale: 0.95 }}
         >

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import api from '../services/api';
 import { Bot, User, Send, Cpu, Loader2, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -50,34 +51,18 @@ export function JarvisApp() {
 
         try {
             // Call the actual backend AI endpoint
-            const res = await fetch('http://localhost:5000/api/ai/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                body: JSON.stringify({
-                    messages: messages.concat(userMsg).map(m => ({ role: m.role, content: m.content }))
-                })
+            const res = await api.post('/api/ai/chat', {
+                messages: messages.concat(userMsg).map(m => ({ role: m.role, content: m.content }))
             });
 
-            const data = await res.json();
+            const data = res.data;
 
-            if (res.ok) {
-                setMessages(prev => [...prev, {
-                    id: (Date.now() + 1).toString(),
-                    role: 'assistant',
-                    content: data.reply,
-                    timestamp: new Date()
-                }]);
-            } else {
-                setMessages(prev => [...prev, {
-                    id: (Date.now() + 1).toString(),
-                    role: 'assistant',
-                    content: `Error: ${data.message || 'Failed to connect to AI core.'}`,
-                    timestamp: new Date()
-                }]);
-            }
+            setMessages(prev => [...prev, {
+                id: (Date.now() + 1).toString(),
+                role: 'assistant',
+                content: data.reply,
+                timestamp: new Date()
+            }]);
         } catch (error) {
             setMessages(prev => [...prev, {
                 id: (Date.now() + 1).toString(),
