@@ -103,7 +103,6 @@ export function MacBookIntro({ onReady, onShutdown, triggerShutdown }: MacBookIn
 
   /* ─── Derived visuals ─── */
   // During closing, revealProgress goes 1→0, so we invert
-  const closingProgress = phase === 'closing' || phase === 'shutdown' ? 1 - revealProgress : revealProgress;
   const isClosing = phase === 'closing' || phase === 'shutdown';
   const rp = isClosing ? 1 - revealProgress : revealProgress;
 

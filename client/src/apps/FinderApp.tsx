@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Folder, File, LayoutGrid, List, Search, Pencil, Trash2, FolderPlus, FilePlus } from 'lucide-react';
 import api from '../services/api';
 

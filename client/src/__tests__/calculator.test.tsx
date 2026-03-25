@@ -5,7 +5,7 @@
  * We test via the rendered component (not extracted helpers) so the tests
  * reflect real user behaviour through the UI.
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { CalculatorApp } from '../apps/CalculatorApp';
