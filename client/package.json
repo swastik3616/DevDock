@@ -1,7 +1,10 @@
 {
-  "name": "client",
-  "private": true,
-  "version": "0.0.0",
+  "name": "@swastik3616/aqua-desk",
+  "version": "1.0.0",
+  "private": false,
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
