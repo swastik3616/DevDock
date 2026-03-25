@@ -1,4 +1,3 @@
-#for the deployment 
 flask
 flask-cors
 flask-pymongo
@@ -6,7 +5,8 @@ pyjwt
 bcrypt
 python-dotenv
 requests
-#For the Testing
+gunicorn
+# Testing
 pytest
 pytest-flask
 mongomock
