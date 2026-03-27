@@ -3,7 +3,7 @@
 ## Overview
 AquaDesk is a sophisticated web-based operating system simulation that replicates the macOS experience from the ground up. It uses a decoupled client-server model — **React 19 + TypeScript** on the frontend and a **Python Flask** REST API on the backend, with **MongoDB** for persistence.
 
-A defining experience is the **MacBook Intro sequence**: on first load the user sees a pure-black screen with a centered Apple logo (exactly like a real MacBook lid). Clicking the logo triggers a 3-D lid-open animation that reveals the MacBook; the screen then auto-boots into the Login screen. Shutdown reverses the sequence, closing the lid gracefully.
+A defining experience is the **MacBook Intro sequence**: on first load the user sees a pure-black screen with a centered Apple logo (exactly like a real MacBook lid). Clicking the logo triggers a 3-D lid-open animation that reveals the MacBook; the screen then auto-boots into the Login screen. Shutdown reverses the sequence, closing the lid gracefully.And also in this i used Gemini API key for amazing siri voice translation.
 
 ---
 
