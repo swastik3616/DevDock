@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Folder, File, LayoutGrid, List, Search, Pencil, Trash2, FolderPlus, FilePlus } from 'lucide-react';
 import api from '../services/api';
+import { useAppStore } from '../store/useAppStore';
 
 interface FileItem {
     id: string;
@@ -10,6 +11,7 @@ interface FileItem {
 }
 
 export function FinderApp() {
+    const { openApp } = useAppStore();
     const [files, setFiles] = useState<FileItem[]>([]);
     const [view, setView] = useState<'grid' | 'list'>('grid');
     const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -17,6 +19,10 @@ export function FinderApp() {
 
     useEffect(() => {
         fetchFiles();
+        
+        const handleRefresh = () => fetchFiles();
+        window.addEventListener('refresh-files', handleRefresh);
+        return () => window.removeEventListener('refresh-files', handleRefresh);
     }, []);
 
     const fetchFiles = async () => {
@@ -109,7 +115,15 @@ export function FinderApp() {
                 {/* Content */}
                 <div className="flex-1 p-4 grid grid-cols-4 sm:grid-cols-6 gap-4 content-start overflow-auto">
                     {files.map(file => (
-                        <div key={file.id} className="flex flex-col items-center gap-2 group p-2 rounded-lg hover:bg-white/5 cursor-default relative">
+                        <div 
+                            key={file.id} 
+                            className="flex flex-col items-center gap-2 group p-2 rounded-lg hover:bg-white/5 cursor-default relative"
+                            onDoubleClick={() => {
+                                if (file.type === 'file') {
+                                    openApp(`texteditor-${file.id}`, file.name, 'filetext', { fileId: file.id });
+                                }
+                            }}
+                        >
                             <div className="w-12 h-12 flex items-center justify-center text-blue-400">
                                 {file.type === 'folder' ? <Folder size={40} fill="currentColor" fillOpacity={0.2} /> : <File size={40} />}
                             </div>

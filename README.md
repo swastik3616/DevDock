@@ -225,7 +225,7 @@ All protected endpoints require: `Authorization: Bearer <token>`
 | `GET` | `/api/music` | ✓ | Get available music tracks |
 | `POST` | `/api/ai/chat` | ✓ | Send a message to the AI assistant |
 
----
+
 
 ## 🔒 Security
 
@@ -235,7 +235,7 @@ All protected endpoints require: `Authorization: Bearer <token>`
 - **Microphone** — Siri operates entirely in-memory via the browser's sandboxed `SpeechRecognition` API; no audio leaves the device.
 - **iFrame isolation** — Safari app `<iframe>` elements run in isolated browser contexts.
 
----
+
 
 ## 🔄 Boot & Shutdown Lifecycle
 
@@ -257,5 +257,6 @@ closing (lid animates shut)
 ---
 
 ## 📄 License
+
 
 MIT — see [LICENSE](LICENSE) for details.

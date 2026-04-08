@@ -12,6 +12,7 @@ import { MailApp } from './apps/MailApp';
 import { SettingsApp } from './apps/SettingsApp';
 import { JarvisApp } from './apps/JarvisApp';
 import { PhotosApp } from './apps/PhotosApp';
+import { TextEditorApp } from './apps/TextEditorApp';
 import { LoginScreen } from './components/LoginScreen';
 import { MacBookIntro } from './components/MacBookIntro';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -74,6 +75,10 @@ function App() {
       case 'photos':
         return <PhotosApp />;
       default:
+        // Handle dynamic instances like texteditor-123
+        if (id.startsWith('texteditor-')) {
+          return <TextEditorApp windowId={id} />;
+        }
         return null;
     }
   };

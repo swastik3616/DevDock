@@ -9,7 +9,7 @@ files_bp = Blueprint('files', __name__)
 @token_required
 def get_files(current_user):
     files_col = current_app.mongo.db.files
-    files = list(files_col.find({'user': current_user}, {'_id': 0}))
+    files = list(files_col.find({'user': current_user}, {'_id': 0, 'content': 0}))
     
     if not files:
         # Initial default files for new user
@@ -31,7 +31,8 @@ def upload_file(current_user):
         'user': current_user,
         'name': data.get('name', 'new_file'),
         'type': data.get('type', 'file'),
-        'size': data.get('size', '0 B')
+        'size': data.get('size', '0 B'),
+        'content': data.get('content', '')
     }
     
     files_col = current_app.mongo.db.files
@@ -51,20 +52,37 @@ def delete_file(current_user, file_id):
         return jsonify({'message': 'File deleted'})
     return jsonify({'message': 'File not found'}), 404
 
+@files_bp.route('/<file_id>', methods=['GET'])
+@token_required
+def get_file(current_user, file_id):
+    files_col = current_app.mongo.db.files
+    file_data = files_col.find_one({'user': current_user, 'id': file_id}, {'_id': 0})
+    if file_data:
+        return jsonify(file_data)
+    return jsonify({'message': 'File not found'}), 404
+
 @files_bp.route('/<file_id>', methods=['PATCH'])
 @token_required
-def rename_file(current_user, file_id):
+def update_file(current_user, file_id):
     data = request.get_json()
-    new_name = data.get('name')
-    if not new_name:
-        return jsonify({'message': 'Name is required'}), 400
+    update_data = {}
+    if 'name' in data:
+        update_data['name'] = data['name']
+    if 'content' in data:
+        update_data['content'] = data['content']
+        # simple estimate of size
+        kb = len(data['content']) / 1024
+        update_data['size'] = f"{kb:.1f} KB" if kb >= 1 else f"{len(data['content'])} B"
+        
+    if not update_data:
+        return jsonify({'message': 'No updates provided'}), 400
         
     files_col = current_app.mongo.db.files
     res = files_col.update_one(
         {'user': current_user, 'id': file_id},
-        {'$set': {'name': new_name}}
+        {'$set': update_data}
     )
     
     if res.modified_count:
-        return jsonify({'message': 'File renamed'})
+        return jsonify({'message': 'File updated'})
     return jsonify({'message': 'File not found or no change made'}), 404

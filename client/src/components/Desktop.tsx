@@ -6,6 +6,7 @@ import { FileText, Mail, Cpu, Monitor } from 'lucide-react';
 import { ContextMenu } from './ContextMenu';
 import { useAppStore } from '../store/useAppStore';
 import { MusicWidget } from './MusicWidget';
+import api from '../services/api';
 
 export function Desktop({ children }: { children?: React.ReactNode }) {
     const [contextMenu, setContextMenu] = useState<{ x: number, y: number } | null>(null);
@@ -25,8 +26,17 @@ export function Desktop({ children }: { children?: React.ReactNode }) {
         setContextMenu({ x: e.clientX, y: e.clientY });
     };
 
+    const handleNewFolder = async () => {
+        try {
+            await api.post('/files', { name: 'New Desktop Folder', type: 'folder', size: '--' });
+            window.dispatchEvent(new Event('refresh-files'));
+        } catch (err) {
+            console.error('Failed to create item', err);
+        }
+    };
+
     const desktopItems = [
-        { label: 'New Folder', action: () => console.log('New Folder') },
+        { label: 'New Folder', action: handleNewFolder },
         { label: 'Get Info', action: () => console.log('Info') },
         { type: 'separator' as const, label: '', action: () => { } },
         {

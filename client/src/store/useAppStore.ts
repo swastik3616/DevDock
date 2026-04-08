@@ -8,6 +8,7 @@ interface Window {
     isMinimized: boolean;
     isMaximized: boolean;
     zIndex: number;
+    appData?: any;
 }
 
 interface AppState {
@@ -19,7 +20,7 @@ interface AppState {
     isShuttingDown: boolean;
     wallpaper: string;
     theme: 'light' | 'dark';
-    openApp: (id: string, title: string, icon: string) => void;
+    openApp: (id: string, title: string, icon: string, appData?: any) => void;
     closeApp: (id: string) => void;
     minimizeApp: (id: string) => void;
     focusApp: (id: string) => void;
@@ -46,12 +47,12 @@ export const useAppStore = create<AppState>((set) => ({
     setWallpaper: (url) => set({ wallpaper: url }),
     setTheme: (theme) => set({ theme }),
     shutdown: () => set({ isShuttingDown: true }),
-    openApp: (id, title, icon) => set((state) => {
+    openApp: (id, title, icon, appData) => set((state) => {
         const existing = state.windows.find(w => w.id === id);
         if (existing) {
             return {
                 activeWindowId: id,
-                windows: state.windows.map(w => w.id === id ? { ...w, isOpen: true, isMinimized: false } : w)
+                windows: state.windows.map(w => w.id === id ? { ...w, isOpen: true, isMinimized: false, appData: appData || w.appData } : w)
             };
         }
         const newWindow: Window = {
@@ -59,7 +60,8 @@ export const useAppStore = create<AppState>((set) => ({
             isOpen: true,
             isMinimized: false,
             isMaximized: false,
-            zIndex: state.windows.length + 10
+            zIndex: state.windows.length + 10,
+            appData
         };
         return {
             windows: [...state.windows, newWindow],

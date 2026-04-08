@@ -1,8 +1,13 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
-from flask_pymongo import PyMongo
+try:
+    from flask_pymongo import PyMongo
+except ImportError:
+    PyMongo = None
 import os
+from dotenv import load_dotenv
 
+load_dotenv()
 
 def create_app(test_config=None):
     app = Flask(__name__)
@@ -12,8 +17,40 @@ def create_app(test_config=None):
     if test_config:
         app.config.update(test_config)
 
-    mongo = PyMongo(app)
-    app.mongo = mongo  # Make it accessible to blueprints
+    # Initialise either the real PyMongo or a simple in‑memory mock when the package is missing
+    if PyMongo:
+        mongo = PyMongo(app)
+    else:
+        # Minimal mock mimicking the attribute access used in the routes
+        class _MockCollection(dict):
+            def find(self, *args, **kwargs):
+                return []
+            def find_one(self, *args, **kwargs):
+                return None
+            def insert_one(self, *args, **kwargs):
+                pass
+            def insert_many(self, *args, **kwargs):
+                pass
+            def delete_one(self, *args, **kwargs):
+                class Result:
+                    deleted_count = 0
+                return Result()
+            def update_one(self, *args, **kwargs):
+                class Result:
+                    modified_count = 0
+                    matched_count = 0
+                return Result()
+        class _MockMongo:
+            def __init__(self):
+                self.db = {
+                    'users': _MockCollection(),
+                    'files': _MockCollection(),
+                    'notes': _MockCollection(),
+                    'ai': _MockCollection(),
+                    'music': _MockCollection(),
+                }
+        mongo = _MockMongo()
+    app.mongo = mongo  # Expose to blueprints
 
     CORS(app)
 
