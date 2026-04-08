@@ -84,5 +84,5 @@ def update_file(current_user, file_id):
     )
     
     if res.modified_count:
-        return jsonify({'message': 'File updated'})
+        return jsonify({"message": "File renamed"}), 200
     return jsonify({'message': 'File not found or no change made'}), 404
