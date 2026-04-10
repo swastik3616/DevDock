@@ -20,7 +20,7 @@ const BH = 290;
 
 export function MacBookIntro({ onReady, onShutdown, triggerShutdown }: MacBookIntroProps) {
   const [phase, setPhase] = useState<Phase>('closed');
-  const [lidAngle, setLidAngle] = useState(0);
+  const [lidAngle, setLidAngle] = useState(180);
   // Controls how much the MacBook has "scaled into view" during opening
   const [revealProgress, setRevealProgress] = useState(0); // 0 = closed fullscreen, 1 = laptop visible
 
@@ -74,7 +74,7 @@ export function MacBookIntro({ onReady, onShutdown, triggerShutdown }: MacBookIn
     setPhaseSync('opening');
 
     setTimeout(() => {
-      animateLid(0, 105, 2.0, () => {
+      animateLid(180, 90, 2.0, () => {
         setPhaseSync('booting');
         setTimeout(() => {
           setPhaseSync('os');
@@ -92,7 +92,7 @@ export function MacBookIntro({ onReady, onShutdown, triggerShutdown }: MacBookIn
     setPhaseSync('shutdown');
     setTimeout(() => {
       setPhaseSync('closing');
-      animateLid(105, 0, 2.0, () => {
+      animateLid(90, 180, 2.0, () => {
         setRevealProgress(0);
         setPhaseSync('closed');
         busyRef.current = false;
@@ -140,9 +140,9 @@ export function MacBookIntro({ onReady, onShutdown, triggerShutdown }: MacBookIn
   const ease = rp;
 
   // Scale: start huge (so only Apple logo fills screen), shrink to normal
-  const scale = 2.8 - ease * 1.8; // 2.8 → 1.0
-  // Slight perspective tilt – straight on when fully open
-  const tiltX = -22 + ease * 17;  // -22 → -5 deg
+  const scale = 2.2 - ease * 1.2; // 2.2 → 1.0
+  // Perspective tilt: 0 = face-on vertical, 70 = base lies flat on a desk
+  const tiltX = ease * 70;
   const tiltY = ease * 0;
 
   return (

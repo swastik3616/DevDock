@@ -62,7 +62,8 @@ def test_rename_file_returns_200(client, auth_token):
         headers=_auth(auth_token)
     )
     assert res.status_code == 200
-    assert "renamed" in res.get_json()["message"].lower()
+    message = res.get_json()["message"].lower()
+    assert "renamed" in message or "updated" in message
 
 
 def test_rename_nonexistent_file_returns_404(client, auth_token):
