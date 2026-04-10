@@ -33,6 +33,7 @@ The system uses a fully decoupled **React 19 + TypeScript** SPA on the frontend 
 - Right-click ContextMenu with full keyboard-accessible markup
 - Wallpaper picker and Light/Dark theme toggle via System Settings
 - Sleep mode (full-screen overlay), Shutdown with lid-close animation
+- **Perspective-Correct 3D Boot Sequence**: Click the 2D Apple logo to trigger a seamless transition into a spatial 3D animation. The laptop base gracefully lays flat onto a 70° desk perspective while the lid opens perfectly to 90°.
 
 ### 🪟 Window Management
 - Physics-based drag-and-drop via `framer-motion`
@@ -239,10 +240,10 @@ All protected endpoints require: `Authorization: Bearer <token>`
 
 ## 🔄 Boot & Shutdown Lifecycle
 
-```
-closed (black screen + Apple logo)
+```text
+closed (black screen + Apple flat logo)
   │  ← click logo
-opening (lid swings open — rAF cubic ease)
+opening (True 3D spatial transform: base tilts down to 70° table perspective, lid opens to 90°)
   │  ← lid fully open
 booting (Apple logo + progress bar, 2.6 s)
   │  ← boot complete
@@ -250,9 +251,10 @@ os/live (LoginScreen → Desktop)
   │  ← shutdown()
 shutdown (spinner overlay, 2.4 s)
   │  ← delay complete
-closing (lid animates shut)
+closing (lid folds down flat, whole scene tilts straight-on to flat logo)
   └── back to closed — auth & window state cleared
 ```
+
 
 ---
 
